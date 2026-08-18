@@ -31,8 +31,7 @@ export class MPowerSSHAccessory {
     service.setCharacteristic(Characteristic.Name, outlet.name);
     service.setCharacteristic(Characteristic.ConfiguredName, outlet.name);
     service.getCharacteristic(Characteristic.On)
-      .onGet(async (): Promise<CharacteristicValue> =>
-        device.getCachedRelayState(outlet.relay) ?? device.readRelay(outlet.relay))
+      .onGet((): CharacteristicValue => device.getCachedRelayState(outlet.relay) ?? false)
       .onSet(async (value: CharacteristicValue): Promise<void> =>
         device.setRelay(outlet.relay, Boolean(value)));
 

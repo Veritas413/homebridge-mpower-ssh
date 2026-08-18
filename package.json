@@ -1,6 +1,6 @@
 {
   "name": "homebridge-mpower-ssh",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "description": "Modern Homebridge plugin for Ubiquiti mFi mPower smart power strips",
   "license": "Apache-2.0",
   "repository": {
