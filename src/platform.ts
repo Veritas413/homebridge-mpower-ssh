@@ -7,6 +7,8 @@ import { MPowerSSHAccessory, OutletConfig } from './platformAccessory';
 import { MAX_POLL_INTERVAL, MIN_POLL_INTERVAL, PLATFORM_NAME, PLUGIN_NAME } from './settings';
 import type { AuthConfig } from './ssh/types';
 
+const MATTER_SCHEMA_VERSION = 1;
+
 export interface StripConfig {
   readonly name?: string;
   readonly host?: string;
@@ -103,7 +105,11 @@ export class MPowerSSHPlatform implements DynamicPlatformPlugin {
             manufacturer: 'Ubiquiti',
             model: 'mFi mPower',
             context: {
-              host, relay: outlet.relay, type: outlet.type ?? 'outlet', allowControl: outlet.allowControl !== false,
+              host,
+              relay: outlet.relay,
+              type: outlet.type ?? 'outlet',
+              allowControl: outlet.allowControl !== false,
+              schemaVersion: MATTER_SCHEMA_VERSION,
             },
             clusters: {
               onOff: { onOff: false },
@@ -121,7 +127,12 @@ export class MPowerSSHPlatform implements DynamicPlatformPlugin {
           };
           const restored = this.matterAccessories.get(uuid);
           const previousType = restored?.context?.type;
-          if (restored && previousType && previousType !== (outlet.type ?? 'outlet')) {
+          const needsMatterRebuild = restored && (
+            previousType !== (outlet.type ?? 'outlet') ||
+            restored.context?.schemaVersion !== MATTER_SCHEMA_VERSION
+          );
+          if (needsMatterRebuild) {
+            this.logger.info(`Rebuilding cached Matter accessory to update capabilities: ${displayName}`);
             matterToReplace.push(restored);
             matterToRegister.push(matterAccessory);
           } else {
