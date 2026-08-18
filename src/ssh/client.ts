@@ -135,7 +135,11 @@ export class SSHClient {
 
     return new Promise((resolve, reject) => {
       const timeout = this.config.commandTimeout || 5000;
+      let settled = false;
       const timeoutHandle = setTimeout(() => {
+        settled = true;
+        this.isConnected = false;
+        this.client?.end();
         reject(new Error(
           `Command timeout after ${timeout}ms for ${this.deviceName}`
         ));
@@ -154,6 +158,9 @@ export class SSHClient {
       this.client.exec(command, (err: Error | undefined, stream: ClientChannel) => {
         if (err) {
           clearTimeout(timeoutHandle);
+          if (settled) return;
+          settled = true;
+          this.isConnected = false;
           const safeMessage = err.message.replace(/password|key|auth/gi, '[REDACTED]');
           reject(new Error(
             `Failed to execute command on ${this.deviceName}: ${safeMessage}`
@@ -163,6 +170,8 @@ export class SSHClient {
 
         stream.on('close', () => {
           clearTimeout(timeoutHandle);
+          if (settled) return;
+          settled = true;
           resolve({
             stdout: stdout.trim(),
             stderr: stderr.trim(),

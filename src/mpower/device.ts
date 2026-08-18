@@ -138,6 +138,11 @@ export class MPowerDevice {
         await this.pollRelay(relay);
       } catch (error) {
         this.logger.warn(`Unable to poll relay ${relay} on ${this.name}: ${(error as Error).message}`);
+        if (!this.client.getIsConnected()) {
+          this.publishAvailability(false);
+          this.logger.warn(`Polling interrupted for ${this.name}; reconnecting on the next cycle`);
+          break;
+        }
       }
     }
   }

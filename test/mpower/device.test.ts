@@ -105,4 +105,21 @@ describe('MPowerDevice', () => {
 
     expect(listener.mock.calls).toEqual([[false], [true]]);
   });
+
+  test('stops polling remaining relays after the SSH session is lost', async () => {
+    const client = makeClient();
+    let connected = true;
+    client.getIsConnected.mockImplementation(() => connected);
+    client.exec.mockImplementation(async () => {
+      connected = false;
+      throw new Error('Command timeout');
+    });
+    const device = new MPowerDevice('Strip', 'host', [1, 2, 3], 10, logger, {
+      host: 'host', auth: { method: 'password', username: 'admin', password: 'secret' },
+    }, client);
+
+    await device.poll();
+
+    expect(client.exec).toHaveBeenCalledTimes(1);
+  });
 });
