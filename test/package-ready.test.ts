@@ -28,6 +28,7 @@ describe('package readiness for local Homebridge install', () => {
         Service: {
           AccessoryInformation: 'AccessoryInformation',
           Outlet: 'Outlet',
+          Lightbulb: 'Lightbulb',
         },
         Characteristic: {
           Manufacturer: 'Manufacturer',
@@ -47,10 +48,12 @@ describe('package readiness for local Homebridge install', () => {
         getService: jest.fn().mockReturnValue(makeService()),
         getServiceById: jest.fn().mockReturnValue(makeService()),
         addService: jest.fn().mockReturnValue(makeService()),
+        removeService: jest.fn(),
         on: jest.fn(),
       })),
       registerPlatformAccessories,
       unregisterPlatformAccessories: jest.fn(),
+      updatePlatformAccessories: jest.fn(),
     };
 
     const log = {

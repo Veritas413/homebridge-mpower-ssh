@@ -18,6 +18,13 @@
         "minimum": 5,
         "maximum": 300
       },
+      "transport": {
+        "title": "Accessory Transport",
+        "type": "string",
+        "default": "hap",
+        "enum": ["hap", "matter", "both"],
+        "description": "Publish accessories over HomeKit/HAP, Matter, or both. Matter must be enabled for this bridge."
+      },
       "strips": {
         "title": "Power Strips",
         "type": "array",
@@ -71,6 +78,13 @@
                   "name": {
                     "type": "string",
                     "description": "Display name for this outlet"
+                  },
+                  "type": {
+                    "title": "Accessory Type",
+                    "type": "string",
+                    "default": "outlet",
+                    "enum": ["outlet", "light"],
+                    "description": "How this relay appears in HomeKit and Matter"
                   }
                 },
                 "required": ["relay", "name"]

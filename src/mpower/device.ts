@@ -1,7 +1,14 @@
 import { Logger } from '../logger';
 import { SSHClient } from '../ssh/client';
 import type { SSHConnectionConfig } from '../ssh/types';
-import { parseRelayState } from './parser';
+import { parseMultiFieldOutput, parseRelayState } from './parser';
+
+export interface ElectricalMeasurements {
+  readonly activePower?: number;
+  readonly voltage?: number;
+  readonly current?: number;
+  readonly powerFactor?: number;
+}
 
 export interface SSHTransport {
   connect(): Promise<void>;
@@ -12,10 +19,12 @@ export interface SSHTransport {
 }
 
 type RelayListener = (state: boolean) => void;
+type MeasurementListener = (measurements: ElectricalMeasurements) => void;
 
 export class MPowerDevice {
   private readonly client: SSHTransport;
   private readonly listeners = new Map<number, Set<RelayListener>>();
+  private readonly measurementListeners = new Map<number, Set<MeasurementListener>>();
   private readonly states = new Map<number, boolean>();
   private operation = Promise.resolve();
   private pollTimer?: ReturnType<typeof setTimeout>;
@@ -55,6 +64,13 @@ export class MPowerDevice {
     return this.states.get(relay);
   }
 
+  onMeasurements(relay: number, listener: MeasurementListener): () => void {
+    const listeners = this.measurementListeners.get(relay) ?? new Set<MeasurementListener>();
+    listeners.add(listener);
+    this.measurementListeners.set(relay, listeners);
+    return () => listeners.delete(listener);
+  }
+
   readRelay(relay: number): Promise<boolean> {
     return this.enqueue(async () => {
       await this.ensureConnected();
@@ -76,11 +92,35 @@ export class MPowerDevice {
   async poll(): Promise<void> {
     for (const relay of this.relays) {
       try {
-        await this.readRelay(relay);
+        await this.pollRelay(relay);
       } catch (error) {
         this.logger.warn(`Unable to poll relay ${relay} on ${this.name}: ${(error as Error).message}`);
       }
     }
+  }
+
+  private pollRelay(relay: number): Promise<void> {
+    return this.enqueue(async () => {
+      await this.ensureConnected();
+      const base = '/proc/power';
+      const command = [
+        `printf 'relay='; cat ${base}/relay${relay}`,
+        `printf '\npower='; cat ${base}/active_pwr${relay}`,
+        `printf '\nvoltage='; cat ${base}/v_rms${relay}`,
+        `printf '\ncurrent='; cat ${base}/i_rms${relay}`,
+        `printf '\npf='; cat ${base}/pf${relay}`,
+      ].join('; ');
+      const parsed = parseMultiFieldOutput((await this.client.exec(command)).stdout);
+      if (parsed.relay === undefined) throw new Error(`No relay state returned for relay ${relay}`);
+      this.publish(relay, parsed.relay);
+      const measurements: ElectricalMeasurements = {
+        activePower: parsed.activePower,
+        voltage: parsed.voltage,
+        current: parsed.current,
+        powerFactor: parsed.powerFactor,
+      };
+      for (const listener of this.measurementListeners.get(relay) ?? []) listener(measurements);
+    });
   }
 
   private schedulePoll(): void {

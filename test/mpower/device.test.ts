@@ -45,4 +45,28 @@ describe('MPowerDevice', () => {
     client.exec.mockResolvedValueOnce({ stdout: '', stderr: 'write failed', exitCode: 1 });
     await expect(device.setRelay(2, false)).rejects.toThrow('write failed');
   });
+
+  test('polls and publishes per-relay electrical measurements', async () => {
+    const client = makeClient();
+    client.getIsConnected.mockReturnValue(true);
+    client.exec.mockResolvedValue({
+      stdout: 'relay=1\npower=53.2\nvoltage=121.4\ncurrent=0.44\npf=0.98',
+      stderr: '',
+      exitCode: 0,
+    });
+    const device = new MPowerDevice('Strip', 'host', [1], 10, logger, {
+      host: 'host', auth: { method: 'password', username: 'admin', password: 'secret' },
+    }, client);
+    const listener = jest.fn();
+    device.onMeasurements(1, listener);
+
+    await device.poll();
+
+    expect(listener).toHaveBeenCalledWith({
+      activePower: 53.2,
+      voltage: 121.4,
+      current: 0.44,
+      powerFactor: 0.98,
+    });
+  });
 });
