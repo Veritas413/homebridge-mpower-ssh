@@ -85,6 +85,12 @@
                     "default": "outlet",
                     "enum": ["outlet", "light"],
                     "description": "How this relay appears in HomeKit and Matter"
+                  },
+                  "allowControl": {
+                    "title": "Allow On/Off Control",
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Disable to monitor this relay while preventing HomeKit and Matter from switching it"
                   }
                 },
                 "required": ["relay", "name"]

@@ -89,6 +89,12 @@ export class MPowerSSHPlatform implements DynamicPlatformPlugin {
 
         if (publishMatter && matter) {
           configuredMatterUuids.add(uuid);
+          const setMatterRelay = (state: boolean): Promise<void> => {
+            if (outlet.allowControl === false) {
+              throw new matter.status.PermissionDenied(`Control is disabled for ${outlet.name}`);
+            }
+            return device.setRelay(outlet.relay, state);
+          };
           const matterAccessory: MatterAccessory = {
             UUID: uuid,
             displayName,
@@ -96,17 +102,18 @@ export class MPowerSSHPlatform implements DynamicPlatformPlugin {
             serialNumber: `${host}:${outlet.relay}`,
             manufacturer: 'Ubiquiti',
             model: 'mFi mPower',
-            context: { host, relay: outlet.relay, type: outlet.type ?? 'outlet' },
+            context: {
+              host, relay: outlet.relay, type: outlet.type ?? 'outlet', allowControl: outlet.allowControl !== false,
+            },
             clusters: {
               onOff: { onOff: false },
               electricalPowerMeasurement: { activePower: null, voltage: null, activeCurrent: null },
             },
             handlers: {
               onOff: {
-                on: () => device.setRelay(outlet.relay, true),
-                off: () => device.setRelay(outlet.relay, false),
-                toggle: async () => device.setRelay(
-                  outlet.relay,
+                on: () => setMatterRelay(true),
+                off: () => setMatterRelay(false),
+                toggle: async () => setMatterRelay(
                   !(device.getCachedRelayState(outlet.relay) ?? await device.readRelay(outlet.relay)),
                 ),
               },

@@ -45,7 +45,8 @@ The mPower hardware is obsolete and requires legacy SSH algorithms. The plugin e
         {
           "relay": 2,
           "name": "Tool Outlet",
-          "type": "outlet"
+          "type": "outlet",
+          "allowControl": false
         }
       ]
     }
@@ -60,6 +61,8 @@ The mPower hardware is obsolete and requires legacy SSH algorithms. The plugin e
 - `both`: publish both while testing. Pairing both transports with Apple Home creates duplicate tiles.
 
 For key authentication, replace `password` with `keyPath` and optionally `passphrase`.
+
+Set `allowControl` to `false` for infrastructure or other protected loads. The relay continues to report state and power measurements, but HomeKit and Matter commands are rejected before an SSH write is sent.
 
 ## Matter
 

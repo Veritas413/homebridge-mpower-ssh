@@ -8,6 +8,7 @@ describe('Matter platform publishing', () => {
       on: jest.fn(),
       hap: { uuid: { generate: jest.fn().mockReturnValue('uuid-1') } },
       matter: {
+        status: { PermissionDenied: class PermissionDenied extends Error {} },
         deviceTypes: { OnOffLight: 'light', OnOffOutlet: 'outlet' },
         clusterNames: {
           OnOff: 'onOff',
@@ -25,7 +26,7 @@ describe('Matter platform publishing', () => {
       transport: 'matter',
       strips: [{
         name: 'Strip', host: '192.168.1.50', username: 'admin', password: 'secret',
-        devices: [{ relay: 1, name: 'Outlet', type: 'outlet' }],
+        devices: [{ relay: 1, name: 'Outlet', type: 'outlet', allowControl: false }],
       }],
     }, api as never);
 
@@ -36,6 +37,7 @@ describe('Matter platform publishing', () => {
     expect(accessory.clusters.electricalPowerMeasurement).toEqual({
       activePower: null, voltage: null, activeCurrent: null,
     });
+    expect(() => accessory.handlers.onOff.off()).toThrow('Control is disabled for Outlet');
 
     const device = (platform as unknown as { devices: Array<{ measurementListeners: Map<number, Set<(value: unknown) => void>> }> })
       .devices[0];

@@ -5,6 +5,7 @@ export interface OutletConfig {
   readonly relay: number;
   readonly name: string;
   readonly type?: 'outlet' | 'light';
+  readonly allowControl?: boolean;
 }
 
 export class MPowerSSHAccessory {
@@ -32,8 +33,12 @@ export class MPowerSSHAccessory {
     service.setCharacteristic(Characteristic.ConfiguredName, outlet.name);
     service.getCharacteristic(Characteristic.On)
       .onGet((): CharacteristicValue => device.getCachedRelayState(outlet.relay) ?? false)
-      .onSet(async (value: CharacteristicValue): Promise<void> =>
-        device.setRelay(outlet.relay, Boolean(value)));
+      .onSet(async (value: CharacteristicValue): Promise<void> => {
+        if (outlet.allowControl === false) {
+          throw new Error(`Control is disabled for ${outlet.name}`);
+        }
+        await device.setRelay(outlet.relay, Boolean(value));
+      });
 
     device.onRelayState(outlet.relay, (state) => {
       service.updateCharacteristic(Characteristic.On, state);
