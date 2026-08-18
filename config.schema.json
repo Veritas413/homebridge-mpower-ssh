@@ -1,0 +1,85 @@
+{
+  "pluginAlias": "mPowerSSH",
+  "pluginType": "platform",
+  "singular": true,
+  "schema": {
+    "type": "object",
+    "properties": {
+      "name": {
+        "title": "Name",
+        "type": "string",
+        "default": "mPower SSH",
+        "description": "Display name for this platform"
+      },
+      "pollInterval": {
+        "title": "Poll Interval (seconds)",
+        "type": "integer",
+        "default": 10,
+        "minimum": 5,
+        "maximum": 300
+      },
+      "strips": {
+        "title": "Power Strips",
+        "type": "array",
+        "description": "Add a strip with SSH auth details, then add the outlets/devices under that strip.",
+        "items": {
+          "type": "object",
+          "properties": {
+            "name": {
+              "title": "Strip Name",
+              "type": "string",
+              "description": "Friendly name for this mPower strip"
+            },
+            "host": {
+              "title": "Host",
+              "type": "string",
+              "description": "mPower strip IP or hostname"
+            },
+            "username": {
+              "title": "SSH Username",
+              "type": "string",
+              "description": "Username used to log into the strip over SSH"
+            },
+            "password": {
+              "title": "SSH Password",
+              "type": "string",
+              "description": "Password used to log into the strip over SSH"
+            },
+            "keyPath": {
+              "title": "Private Key Path",
+              "type": "string",
+              "description": "Optional path to an SSH private key"
+            },
+            "port": {
+              "title": "SSH Port",
+              "type": "integer",
+              "default": 22,
+              "minimum": 1,
+              "maximum": 65535
+            },
+            "devices": {
+              "type": "array",
+              "description": "Add each outlet on the strip here.",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "relay": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "description": "Relay number on the strip"
+                  },
+                  "name": {
+                    "type": "string",
+                    "description": "Display name for this outlet"
+                  }
+                },
+                "required": ["relay", "name"]
+              }
+            }
+          },
+          "required": ["host"]
+        }
+      }
+    }
+  }
+}

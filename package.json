@@ -1,0 +1,58 @@
+{
+  "name": "homebridge-mpower-ssh",
+  "version": "0.1.0",
+  "description": "Modern Homebridge plugin for Ubiquiti mFi mPower smart power strips",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Veritas413/homebridge-mpower-ssh.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Veritas413/homebridge-mpower-ssh/issues"
+  },
+  "homepage": "https://github.com/Veritas413/homebridge-mpower-ssh#readme",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "engines": {
+    "node": ">=22.0.0",
+    "homebridge": ">=1.9.0"
+  },
+  "keywords": [
+    "homebridge-plugin",
+    "supports-hap",
+    "supports-matter"
+  ],
+  "author": "Veritas413",
+  "private": false,
+  "scripts": {
+    "build": "tsc",
+    "watch": "tsc --watch",
+    "lint": "eslint src test",
+    "lint:fix": "eslint src test --fix",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage",
+    "probe": "node dist/probe.js"
+  },
+  "files": [
+    "dist",
+    "config.schema.json",
+    "README.md",
+    "LICENSE"
+  ],
+  "dependencies": {
+    "ssh2": "^1.17.0"
+  },
+  "devDependencies": {
+    "@types/jest": "^29.5.0",
+    "@types/node": "^22.0.0",
+    "@types/ssh2": "^1.15.0",
+    "@typescript-eslint/eslint-plugin": "^7.0.0",
+    "@typescript-eslint/parser": "^7.0.0",
+    "eslint": "^8.57.0",
+    "homebridge": "^1.9.0",
+    "jest": "^29.5.0",
+    "ts-jest": "^29.1.0",
+    "typescript": "^5.4.0"
+  }
+}

@@ -1,0 +1,37 @@
+import type { API, CharacteristicValue, PlatformAccessory } from 'homebridge';
+import type { MPowerDevice } from './mpower/device';
+
+export interface OutletConfig {
+  readonly relay: number;
+  readonly name: string;
+}
+
+export class MPowerSSHAccessory {
+  constructor(
+    api: API,
+    accessory: PlatformAccessory,
+    device: MPowerDevice,
+    outlet: OutletConfig,
+  ) {
+    const { Characteristic, Service } = api.hap;
+    const infoService = accessory.getService(Service.AccessoryInformation) ??
+      accessory.addService(Service.AccessoryInformation);
+    infoService
+      .setCharacteristic(Characteristic.Manufacturer, 'Ubiquiti')
+      .setCharacteristic(Characteristic.Model, 'mFi mPower')
+      .setCharacteristic(Characteristic.SerialNumber, `${device.host}:${outlet.relay}`);
+
+    const service = accessory.getServiceById(Service.Outlet, `relay-${outlet.relay}`) ??
+      accessory.addService(Service.Outlet, outlet.name, `relay-${outlet.relay}`);
+    service.setCharacteristic(Characteristic.Name, outlet.name);
+    service.getCharacteristic(Characteristic.On)
+      .onGet(async (): Promise<CharacteristicValue> =>
+        device.getCachedRelayState(outlet.relay) ?? device.readRelay(outlet.relay))
+      .onSet(async (value: CharacteristicValue): Promise<void> =>
+        device.setRelay(outlet.relay, Boolean(value)));
+
+    device.onRelayState(outlet.relay, (state) => {
+      service.updateCharacteristic(Characteristic.On, state);
+    });
+  }
+}
