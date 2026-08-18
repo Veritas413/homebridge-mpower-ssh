@@ -29,6 +29,8 @@ export class MPowerDevice {
   private operation = Promise.resolve();
   private pollTimer?: ReturnType<typeof setTimeout>;
   private stopped = false;
+  private consecutiveConnectionFailures = 0;
+  private nextConnectionAttemptAt = 0;
 
   constructor(
     readonly name: string,
@@ -90,6 +92,20 @@ export class MPowerDevice {
   }
 
   async poll(): Promise<void> {
+    if (Date.now() < this.nextConnectionAttemptAt) return;
+    try {
+      await this.enqueue(() => this.ensureConnected());
+      this.consecutiveConnectionFailures = 0;
+      this.nextConnectionAttemptAt = 0;
+    } catch (error) {
+      this.consecutiveConnectionFailures += 1;
+      const retrySeconds = Math.min(300, this.pollIntervalSeconds * (2 ** (this.consecutiveConnectionFailures - 1)));
+      this.nextConnectionAttemptAt = Date.now() + retrySeconds * 1000;
+      this.logger.warn(
+        `Unable to connect to ${this.name} (${this.host}): ${(error as Error).message}; retrying in ${retrySeconds}s`,
+      );
+      return;
+    }
     for (const relay of this.relays) {
       try {
         await this.pollRelay(relay);

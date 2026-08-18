@@ -69,4 +69,18 @@ describe('MPowerDevice', () => {
       powerFactor: 0.98,
     });
   });
+
+  test('attempts one connection per offline strip and backs off', async () => {
+    const client = makeClient();
+    client.connect.mockRejectedValue(new Error('host unreachable'));
+    const device = new MPowerDevice('Offline Strip', 'host', [1, 2, 3], 10, logger, {
+      host: 'host', auth: { method: 'password', username: 'admin', password: 'secret' },
+    }, client);
+
+    await device.poll();
+    await device.poll();
+
+    expect(client.connect).toHaveBeenCalledTimes(1);
+    expect(client.exec).not.toHaveBeenCalled();
+  });
 });

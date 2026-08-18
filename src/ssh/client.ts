@@ -49,57 +49,61 @@ export class SSHClient {
    */
   async connect(): Promise<void> {
     return new Promise((resolve, reject) => {
-      if (!this.client) {
-        this.client = new SSH2Client();
+      if (this.isConnected) {
+        resolve();
+        return;
       }
+      this.client?.removeAllListeners();
+      this.client?.end();
+      const client = new SSH2Client();
+      this.client = client;
+      let settled = false;
 
       const timeout = this.config.readyTimeout || 20000;
       const timeoutHandle = setTimeout(() => {
-        if (this.client) {
-          this.client.end();
-        }
+        settled = true;
+        client.end();
         reject(new Error(
           `SSH connection timeout after ${timeout}ms for ${this.deviceName} (${this.config.host})`
         ));
       }, timeout);
 
-      this.client.on('ready', () => {
+      client.on('ready', () => {
         clearTimeout(timeoutHandle);
+        settled = true;
         this.isConnected = true;
         this.reconnectAttempts = 0;
         this.logger.info(`SSH client ready for ${this.deviceName}`);
         resolve();
       });
 
-      this.client.on('error', (err: Error) => {
+      client.on('error', (err: Error) => {
         clearTimeout(timeoutHandle);
         const safeMessage = err.message.replace(/password|key|auth/gi, '[REDACTED]');
-        this.logger.error(
-          `SSH error for ${this.deviceName} (${this.config.host}): ${safeMessage}`
-        );
-        if (!this.isConnected) {
-          reject(err);
+        if (!settled) {
+          settled = true;
+          reject(new Error(safeMessage));
+        } else {
+          this.logger.warn(`SSH connection lost for ${this.deviceName} (${this.config.host}): ${safeMessage}`);
         }
       });
 
-      this.client.on('close', () => {
+      client.on('close', () => {
         this.isConnected = false;
         this.logger.debug(`SSH connection closed for ${this.deviceName}`);
       });
 
-      this.client.on('end', () => {
+      client.on('end', () => {
         this.isConnected = false;
         this.logger.debug(`SSH connection ended for ${this.deviceName}`);
       });
 
       try {
         const connectConfig = this.buildConnectConfig();
-        if (!this.client) {
-          throw new Error('SSH client not initialized');
-        }
-        this.client.connect(connectConfig);
+        client.connect(connectConfig);
       } catch (err) {
         clearTimeout(timeoutHandle);
+        settled = true;
         reject(err);
       }
     });
