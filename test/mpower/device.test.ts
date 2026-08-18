@@ -83,4 +83,20 @@ describe('MPowerDevice', () => {
     expect(client.connect).toHaveBeenCalledTimes(1);
     expect(client.exec).not.toHaveBeenCalled();
   });
+
+  test('publishes offline and recovered availability once per change', async () => {
+    const client = makeClient();
+    client.connect.mockRejectedValueOnce(new Error('host unreachable')).mockResolvedValue(undefined);
+    const device = new MPowerDevice('Strip', 'host', [], 0, logger, {
+      host: 'host', auth: { method: 'password', username: 'admin', password: 'secret' },
+    }, client);
+    const listener = jest.fn();
+    device.onAvailability(listener);
+
+    await device.poll();
+    await device.poll();
+    await device.poll();
+
+    expect(listener.mock.calls).toEqual([[false], [true]]);
+  });
 });

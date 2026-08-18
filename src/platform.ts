@@ -139,6 +139,11 @@ export class MPowerSSHPlatform implements DynamicPlatformPlugin {
               activeCurrent: measurements.current === undefined ? null : Math.round(measurements.current * 1000),
             });
           });
+          device.onAvailability((available) => {
+            void matter.updateAccessoryState(uuid, matter.clusterNames.BridgedDeviceBasicInformation, {
+              reachable: available,
+            });
+          });
         }
       }
       device.start();

@@ -20,17 +20,20 @@ export interface SSHTransport {
 
 type RelayListener = (state: boolean) => void;
 type MeasurementListener = (measurements: ElectricalMeasurements) => void;
+type AvailabilityListener = (available: boolean) => void;
 
 export class MPowerDevice {
   private readonly client: SSHTransport;
   private readonly listeners = new Map<number, Set<RelayListener>>();
   private readonly measurementListeners = new Map<number, Set<MeasurementListener>>();
+  private readonly availabilityListeners = new Set<AvailabilityListener>();
   private readonly states = new Map<number, boolean>();
   private operation = Promise.resolve();
   private pollTimer?: ReturnType<typeof setTimeout>;
   private stopped = false;
   private consecutiveConnectionFailures = 0;
   private nextConnectionAttemptAt = 0;
+  private available?: boolean;
 
   constructor(
     readonly name: string,
@@ -73,6 +76,12 @@ export class MPowerDevice {
     return () => listeners.delete(listener);
   }
 
+  onAvailability(listener: AvailabilityListener): () => void {
+    this.availabilityListeners.add(listener);
+    if (this.available !== undefined) listener(this.available);
+    return () => this.availabilityListeners.delete(listener);
+  }
+
   readRelay(relay: number): Promise<boolean> {
     return this.enqueue(async () => {
       await this.ensureConnected();
@@ -101,6 +110,7 @@ export class MPowerDevice {
       this.consecutiveConnectionFailures += 1;
       const retrySeconds = Math.min(300, this.pollIntervalSeconds * (2 ** (this.consecutiveConnectionFailures - 1)));
       this.nextConnectionAttemptAt = Date.now() + retrySeconds * 1000;
+      this.publishAvailability(false);
       this.logger.warn(
         `Unable to connect to ${this.name} (${this.host}): ${(error as Error).message}; retrying in ${retrySeconds}s`,
       );
@@ -146,7 +156,13 @@ export class MPowerDevice {
   }
 
   private async ensureConnected(): Promise<void> {
-    if (!this.client.getIsConnected()) await this.client.connect();
+    try {
+      if (!this.client.getIsConnected()) await this.client.connect();
+      this.publishAvailability(true);
+    } catch (error) {
+      this.publishAvailability(false);
+      throw error;
+    }
   }
 
   private enqueue<T>(operation: () => Promise<T>): Promise<T> {
@@ -158,5 +174,11 @@ export class MPowerDevice {
   private publish(relay: number, state: boolean): void {
     this.states.set(relay, state);
     for (const listener of this.listeners.get(relay) ?? []) listener(state);
+  }
+
+  private publishAvailability(available: boolean): void {
+    if (this.available === available) return;
+    this.available = available;
+    for (const listener of this.availabilityListeners) listener(available);
   }
 }

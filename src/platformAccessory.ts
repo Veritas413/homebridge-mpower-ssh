@@ -43,5 +43,11 @@ export class MPowerSSHAccessory {
     device.onRelayState(outlet.relay, (state) => {
       service.updateCharacteristic(Characteristic.On, state);
     });
+    device.onAvailability((available) => {
+      service.updateCharacteristic(
+        Characteristic.StatusFault,
+        available ? Characteristic.StatusFault.NO_FAULT : Characteristic.StatusFault.GENERAL_FAULT,
+      );
+    });
   }
 }
