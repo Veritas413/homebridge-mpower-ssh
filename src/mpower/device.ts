@@ -21,6 +21,7 @@ export interface SSHTransport {
 type RelayListener = (state: boolean) => void;
 type MeasurementListener = (measurements: ElectricalMeasurements) => void;
 type AvailabilityListener = (available: boolean) => void;
+export type ControlSource = 'HAP' | 'Matter' | 'plugin';
 
 export class MPowerDevice {
   private readonly client: SSHTransport;
@@ -91,13 +92,29 @@ export class MPowerDevice {
     });
   }
 
-  setRelay(relay: number, state: boolean): Promise<void> {
+  setRelay(relay: number, state: boolean, source: ControlSource = 'plugin'): Promise<void> {
+    const target = state ? 'ON' : 'OFF';
+    this.logger.info(`Control request via ${source} for ${this.name} relay ${relay}: ${target}`);
     return this.enqueue(async () => {
-      await this.ensureConnected();
-      const result = await this.client.exec(`echo ${state ? '1' : '0'} > /proc/power/relay${relay}`);
-      if (result.exitCode !== 0) throw new Error(`Failed to set relay ${relay} on ${this.name}: ${result.stderr}`);
-      this.publish(relay, state);
+      try {
+        await this.ensureConnected();
+        const result = await this.client.exec(`echo ${state ? '1' : '0'} > /proc/power/relay${relay}`);
+        if (result.exitCode !== 0) throw new Error(result.stderr || `exit code ${result.exitCode}`);
+        this.publish(relay, state);
+        this.logger.info(`Control applied via ${source} for ${this.name} relay ${relay}: ${target}`);
+      } catch (error) {
+        this.logger.warn(
+          `Control failed via ${source} for ${this.name} relay ${relay}: ${target}; ${(error as Error).message}`,
+        );
+        throw new Error(`Failed to set relay ${relay} on ${this.name}: ${(error as Error).message}`);
+      }
     });
+  }
+
+  logControlDenied(relay: number, state: boolean, source: ControlSource): void {
+    this.logger.warn(
+      `Control denied via ${source} for ${this.name} relay ${relay}: ${state ? 'ON' : 'OFF'} (allowControl is false)`,
+    );
   }
 
   async poll(): Promise<void> {

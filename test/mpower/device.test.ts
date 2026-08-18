@@ -35,15 +35,21 @@ describe('MPowerDevice', () => {
   test('writes relay state and rejects failed commands', async () => {
     const client = makeClient();
     client.getIsConnected.mockReturnValue(true);
-    const device = new MPowerDevice('Strip', 'host', [2], 10, logger, {
+    const log = { info: jest.fn(), warn: jest.fn(), error: jest.fn(), debug: jest.fn() };
+    const device = new MPowerDevice('Strip', 'host', [2], 10, new Logger(log), {
       host: 'host', auth: { method: 'password', username: 'admin', password: 'secret' },
     }, client);
 
-    await device.setRelay(2, true);
+    await device.setRelay(2, true, 'Matter');
     expect(client.exec).toHaveBeenCalledWith('echo 1 > /proc/power/relay2');
+    expect(log.info.mock.calls).toEqual([
+      ['Control request via Matter for Strip relay 2: ON'],
+      ['Control applied via Matter for Strip relay 2: ON'],
+    ]);
 
     client.exec.mockResolvedValueOnce({ stdout: '', stderr: 'write failed', exitCode: 1 });
-    await expect(device.setRelay(2, false)).rejects.toThrow('write failed');
+    await expect(device.setRelay(2, false, 'HAP')).rejects.toThrow('write failed');
+    expect(log.warn).toHaveBeenCalledWith('Control failed via HAP for Strip relay 2: OFF; write failed');
   });
 
   test('polls and publishes per-relay electrical measurements', async () => {

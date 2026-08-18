@@ -91,9 +91,10 @@ export class MPowerSSHPlatform implements DynamicPlatformPlugin {
           configuredMatterUuids.add(uuid);
           const setMatterRelay = (state: boolean): Promise<void> => {
             if (outlet.allowControl === false) {
+              device.logControlDenied(outlet.relay, state, 'Matter');
               throw new matter.status.PermissionDenied(`Control is disabled for ${outlet.name}`);
             }
-            return device.setRelay(outlet.relay, state);
+            return device.setRelay(outlet.relay, state, 'Matter');
           };
           const matterAccessory: MatterAccessory = {
             UUID: uuid,

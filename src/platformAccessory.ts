@@ -35,9 +35,10 @@ export class MPowerSSHAccessory {
       .onGet((): CharacteristicValue => device.getCachedRelayState(outlet.relay) ?? false)
       .onSet(async (value: CharacteristicValue): Promise<void> => {
         if (outlet.allowControl === false) {
+          device.logControlDenied(outlet.relay, Boolean(value), 'HAP');
           throw new Error(`Control is disabled for ${outlet.name}`);
         }
-        await device.setRelay(outlet.relay, Boolean(value));
+        await device.setRelay(outlet.relay, Boolean(value), 'HAP');
       });
 
     device.onRelayState(outlet.relay, (state) => {
