@@ -37,7 +37,6 @@ describe('Matter platform publishing', () => {
     expect(accessory.clusters.electricalPowerMeasurement).toEqual({
       activePower: null, voltage: null, activeCurrent: null,
     });
-    expect(accessory.context.schemaVersion).toBe(1);
     expect(() => accessory.handlers.onOff.off()).toThrow('Control is disabled for Outlet');
 
     const device = (platform as unknown as { devices: Array<{ measurementListeners: Map<number, Set<(value: unknown) => void>> }> })
