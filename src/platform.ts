@@ -32,6 +32,10 @@ export class MPowerSSHPlatform implements DynamicPlatformPlugin {
 
   constructor(log: HomebridgeLogger, private readonly config: MPowerPlatformConfig, private readonly api: API) {
     this.logger = new Logger(log);
+    if (!Array.isArray(this.config.strips) || this.config.strips.length === 0) {
+      this.logger.debug('No mPower strips configured; platform is inactive');
+      return;
+    }
     this.logger.info('Initializing mPowerSSH platform...');
     this.api.on('didFinishLaunching', () => void this.discoverDevices());
     this.api.on('shutdown', () => void Promise.all(this.devices.map((device) => device.stop())));

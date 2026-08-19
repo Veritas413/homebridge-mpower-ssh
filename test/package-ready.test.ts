@@ -11,6 +11,16 @@ describe('package readiness for local Homebridge install', () => {
     expect(typeof exported).toBe('function');
   });
 
+  it('does not start an unconfigured platform', () => {
+    const api = { on: jest.fn() };
+    const log = { info: jest.fn(), warn: jest.fn(), error: jest.fn(), debug: jest.fn() };
+
+    new (require('../src/platform').MPowerSSHPlatform)(log, { platform: 'mPowerSSH' }, api);
+
+    expect(api.on).not.toHaveBeenCalled();
+    expect(log.info).not.toHaveBeenCalled();
+  });
+
   it('accepts nested strip configs and registers each outlet accessory', () => {
     const registerPlatformAccessories = jest.fn();
     const makeService = (): Record<string, jest.Mock> => ({
