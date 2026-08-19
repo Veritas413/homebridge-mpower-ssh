@@ -6,7 +6,7 @@
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
-    "url": "https://github.com/Veritas413/homebridge-mpower-ssh.git"
+    "url": "git+https://github.com/Veritas413/homebridge-mpower-ssh.git"
   },
   "bugs": {
     "url": "https://github.com/Veritas413/homebridge-mpower-ssh/issues"
