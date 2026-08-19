@@ -5,7 +5,7 @@ import globals from 'globals';
 
 export default [
   {
-    ignores: ['dist/**', 'node_modules/**', 'coverage/**']
+    ignores: ['dist/**', 'node_modules/**', 'coverage/**'],
   },
   {
     files: ['src/**/*.ts', 'test/**/*.ts'],
@@ -13,15 +13,15 @@ export default [
       parser: tsParser,
       parserOptions: {
         ecmaVersion: 2020,
-        sourceType: 'module'
+        sourceType: 'module',
       },
       globals: {
         ...globals.node,
-        ...globals.jest
-      }
+        ...globals.jest,
+      },
     },
     plugins: {
-      '@typescript-eslint': tsPlugin.default ?? tsPlugin
+      '@typescript-eslint': tsPlugin.default ?? tsPlugin,
     },
     rules: {
       ...js.configs.recommended.rules,
@@ -30,13 +30,13 @@ export default [
       '@typescript-eslint/explicit-function-return-type': 'warn',
       'no-console': 'off',
       'quotes': ['error', 'single', { avoidEscape: true }],
-      'semi': ['error', 'always']
-    }
+      'semi': ['error', 'always'],
+    },
   },
   {
     files: ['test/**/*.ts'],
     rules: {
-      '@typescript-eslint/no-var-requires': 'off'
-    }
-  }
+      '@typescript-eslint/no-var-requires': 'off',
+    },
+  },
 ];

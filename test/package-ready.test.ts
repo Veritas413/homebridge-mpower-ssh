@@ -13,7 +13,7 @@ describe('package readiness for local Homebridge install', () => {
 
   it('accepts nested strip configs and registers each outlet accessory', () => {
     const registerPlatformAccessories = jest.fn();
-    const makeService = () => ({
+    const makeService = (): Record<string, jest.Mock> => ({
       setCharacteristic: jest.fn().mockReturnThis(),
       updateCharacteristic: jest.fn().mockReturnThis(),
       getCharacteristic: jest.fn().mockReturnValue({
@@ -77,7 +77,7 @@ describe('package readiness for local Homebridge install', () => {
       ],
     }, api);
 
-    (platform as any).discoverDevices();
+    (platform as unknown as { discoverDevices(): Promise<void> }).discoverDevices();
 
     expect(registerPlatformAccessories).toHaveBeenCalledTimes(2);
     expect(api.hap.uuid.generate).toHaveBeenCalledWith('192.168.1.50:1');

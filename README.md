@@ -1,25 +1,35 @@
 # homebridge-mpower-ssh
 
-A Homebridge plugin for controlling legacy Ubiquiti mFi mPower smart power strips directly over SSH, without an mFi Controller.
+A Homebridge dynamic-platform plugin for controlling and monitoring legacy Ubiquiti mFi mPower smart power strips directly over SSH, without an mFi Controller.
 
 ## Features
 
-- Direct per-relay on/off control
-- Relay state polling
-- Per-relay active power, voltage, current, and power-factor polling
-- HomeKit/HAP outlets and lights
-- Matter outlets and lights with `ElectricalPowerMeasurement`
-- Password or private-key authentication
-- One serialized SSH connection per physical strip
+- Per-relay on/off control and state polling
+- Active power, voltage, current, and power-factor polling
+- HomeKit/HAP and native Homebridge Matter transports
+- Outlet and light accessory types
+- Monitoring-only protection for loads that must not be switched off
+- Password or private-key SSH authentication
+- Automatic reconnect with exponential backoff for offline strips
 - Homebridge UI configuration schema
-
-The mPower hardware is obsolete and requires legacy SSH algorithms. The plugin enables only the algorithms required by these devices (`diffie-hellman-group1-sha1`, `ssh-rsa`, and `aes128-cbc`). Use it only on a trusted local network.
 
 ## Requirements
 
-- Node.js 22, 24, or 26
 - Homebridge 2.4 or newer
+- Node.js 22.12 or newer in the Node 22 line, or Node.js 24
 - An mPower device reachable over SSH
+
+The mPower hardware is obsolete and requires legacy SSH algorithms. This plugin enables only the algorithms required by these devices: `diffie-hellman-group1-sha1`, `ssh-rsa`, and `aes128-cbc`. Use it only on a trusted local network and give each strip a dedicated, limited-purpose SSH account where possible.
+
+## Installation
+
+Install `homebridge-mpower-ssh` from the Homebridge UI, or install it globally from npm:
+
+```bash
+npm install -g homebridge-mpower-ssh
+```
+
+Configure the plugin through the Homebridge UI and restart Homebridge.
 
 ## Configuration
 
@@ -44,7 +54,7 @@ The mPower hardware is obsolete and requires legacy SSH algorithms. The plugin e
         },
         {
           "relay": 2,
-          "name": "Tool Outlet",
+          "name": "Network Equipment",
           "type": "outlet",
           "allowControl": false
         }
@@ -54,30 +64,51 @@ The mPower hardware is obsolete and requires legacy SSH algorithms. The plugin e
 }
 ```
 
-`transport` can be:
+### Platform options
 
-- `hap` (default): publish traditional HomeKit accessories.
-- `matter`: publish Matter accessories only.
-- `both`: publish both while testing. Pairing both transports with Apple Home creates duplicate tiles.
+| Option | Required | Default | Description |
+| --- | --- | --- | --- |
+| `platform` | Yes | — | Must be `mPowerSSH`. |
+| `name` | No | `mPower SSH` | Platform display name. |
+| `transport` | No | `hap` | `hap`, `matter`, or `both`. |
+| `pollInterval` | No | `10` | Polling interval in seconds, from 5 through 300. |
+| `strips` | Yes | — | One or more physical mPower strips. |
 
-For key authentication, replace `password` with `keyPath` and optionally `passphrase`.
+Each strip requires `host`, `username`, one authentication method (`password` or `keyPath`), and at least one entry in `devices`. Private-key authentication also accepts an optional `passphrase`.
 
-Set `allowControl` to `false` for infrastructure or other protected loads. The relay continues to report state and power measurements, but HomeKit and Matter commands are rejected before an SSH write is sent.
+Each device requires a positive, unique `relay` number and a `name`. Its `type` is `outlet` by default or may be `light`. Set the JSON boolean `allowControl` to `false` for infrastructure or other protected loads. The relay continues reporting state and measurements, but control requests are rejected before any SSH write.
 
-## Matter
+## Transport and power monitoring
 
-Matter must be enabled for the main bridge or the plugin's child bridge in Homebridge. Configure `transport` as `matter` or `both`, restart Homebridge, and commission the Matter bridge using the QR code shown by Homebridge.
+- `hap` publishes traditional HomeKit accessories. HAP does not expose these electrical measurements to Apple Home.
+- `matter` publishes native Matter accessories with `ElectricalPowerMeasurement`.
+- `both` is useful for migration testing, but pairing both transports creates duplicate accessories in Apple Home.
 
-Each configured relay is published as an on/off plug-in unit or on/off light. The plugin reads:
+Matter must be enabled for the main bridge or the plugin's child bridge. After selecting `matter`, restart Homebridge and commission its Matter bridge using the QR code shown in the Homebridge UI.
 
-- `/proc/power/active_pwrN` as active power
-- `/proc/power/v_rmsN` as voltage
-- `/proc/power/i_rmsN` as active current
-- `/proc/power/pfN` as power factor
+The plugin reads these per-relay files:
 
-Matter receives active power, voltage, and current. Power factor is polled but is not part of Homebridge's current electrical measurement state interface. Cumulative energy is not yet implemented.
+- `/proc/power/active_pwrN` — active power
+- `/proc/power/v_rmsN` — voltage
+- `/proc/power/i_rmsN` — active current
+- `/proc/power/pfN` — power factor
 
-## Device Probe
+Matter receives active power, voltage, and current. Power factor is polled but is not currently published by the Homebridge Matter state interface. Cumulative energy is not implemented. Apple Home requires a client OS version that supports displaying Matter energy data; older versions may control the outlet without showing wattage.
+
+If a release changes an accessory's Matter capabilities, Apple Home may retain its old endpoint description. Restart the Home app and home hub first. If the new capability still does not appear, removing and re-pairing only the Homebridge Matter bridge forces rediscovery, but may reset rooms, scenes, and automations for its accessories.
+
+## Offline devices and diagnostics
+
+An unreachable strip does not block other configured strips. Retries use exponential backoff up to five minutes, and normal polling resumes automatically after reconnection. Accessories retain their last known state while reporting a fault or unreachable status.
+
+Relay changes log the transport, requested state, and result. For example:
+
+```text
+Control request via Matter for Workshop Strip relay 1: ON
+Control applied via Matter for Workshop Strip relay 1: ON
+```
+
+## Device probe
 
 Build the project and query a device without installing the Homebridge plugin:
 
@@ -86,14 +117,19 @@ npm run build
 MPOWER_PASSWORD=your_password npm run probe -- --host 192.168.1.50 --username admin
 ```
 
+Run `npm run probe -- --help` for private-key and other options. Never include probe credentials or output containing sensitive information in a public issue.
+
 ## Development
 
 ```bash
-npm install
+npm ci
 npm run build
-npm test
+npm test -- --runInBand
 npm run lint
+npm pack --dry-run
 ```
+
+Bug reports and contributions are welcome in the [GitHub repository](https://github.com/Veritas413/homebridge-mpower-ssh). Please redact hostnames, addresses, usernames, passwords, private keys, and tokens from logs and configuration.
 
 ## License
 

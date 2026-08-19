@@ -50,12 +50,19 @@
             "password": {
               "title": "SSH Password",
               "type": "string",
+              "format": "password",
               "description": "Password used to log into the strip over SSH"
             },
             "keyPath": {
               "title": "Private Key Path",
               "type": "string",
               "description": "Optional path to an SSH private key"
+            },
+            "passphrase": {
+              "title": "Private Key Passphrase",
+              "type": "string",
+              "format": "password",
+              "description": "Optional passphrase for the SSH private key"
             },
             "port": {
               "title": "SSH Port",
@@ -97,9 +104,14 @@
               }
             }
           },
-          "required": ["host"]
+          "required": ["host", "username", "devices"],
+          "anyOf": [
+            { "required": ["password"] },
+            { "required": ["keyPath"] }
+          ]
         }
       }
-    }
+    },
+    "required": ["strips"]
   }
 }

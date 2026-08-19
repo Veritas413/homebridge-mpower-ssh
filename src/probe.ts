@@ -44,6 +44,7 @@ interface ProbeArgs {
   password?: string;
   keyPath?: string;
   discover?: boolean;
+  help?: boolean;
 }
 
 function parseArgs(): ProbeArgs {
@@ -75,6 +76,8 @@ function parseArgs(): ProbeArgs {
       i++;
     } else if (arg === '--discover') {
       result.discover = true;
+    } else if (arg === '--help' || arg === '-h') {
+      result.help = true;
     }
   }
 
@@ -164,6 +167,12 @@ async function probePowerMetrics(
 
 async function runProbe(): Promise<void> {
   const args = parseArgs();
+  if (args.help) {
+    console.log('Usage: npm run probe -- --host HOST --username USER [options]');
+    console.log('Options: --port PORT --auth-method password|privateKey --key-path PATH --discover');
+    console.log('Set MPOWER_PASSWORD in the environment to avoid an interactive password prompt.');
+    return;
+  }
   validateArgs(args);
 
   console.log('mPower SSH Device Probe');
@@ -204,7 +213,7 @@ async function runProbe(): Promise<void> {
   try {
     console.log('\nConnecting...');
     await client.connect();
-    console.log('✓ Connected');
+    console.log('Connected');
 
     // Discover available files
     const files = await listProcPower(client);
@@ -240,14 +249,14 @@ async function runProbe(): Promise<void> {
       console.log('Could not retrieve system info');
     }
 
-    console.log('\n✓ Probe complete');
+    console.log('\nProbe complete');
     console.log('Use the above output to:');
     console.log('  1. Determine available power metrics');
     console.log('  2. Verify relay numbering');
     console.log('  3. Check if cumulative energy is available');
 
   } catch (err) {
-    console.error('✗ Probe failed:', (err as Error).message);
+    console.error('Probe failed:', (err as Error).message);
     process.exit(1);
   } finally {
     await client.disconnect();

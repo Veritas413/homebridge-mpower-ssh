@@ -1,6 +1,7 @@
 {
   "name": "homebridge-mpower-ssh",
-  "version": "0.2.9",
+  "version": "1.0.0",
+  "displayName": "mPower SSH",
   "description": "Modern Homebridge plugin for Ubiquiti mFi mPower smart power strips",
   "license": "Apache-2.0",
   "repository": {
@@ -14,8 +15,8 @@
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "engines": {
-    "node": ">=22.0.0",
-    "homebridge": ">=2.4.0"
+    "node": "^22.12.0 || ^24.0.0",
+    "homebridge": "^2.4.0"
   },
   "keywords": [
     "homebridge-plugin",
@@ -32,12 +33,15 @@
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
-    "probe": "node dist/probe.js"
+    "probe": "node dist/probe.js",
+    "prepack": "npm run build",
+    "prepublishOnly": "npm run lint && npm test -- --runInBand"
   },
   "files": [
     "dist",
     "config.schema.json",
     "README.md",
+    "CHANGELOG.md",
     "LICENSE"
   ],
   "dependencies": {
