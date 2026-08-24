@@ -2,6 +2,11 @@
 
 All notable changes to this project are documented here.
 
+## Unreleased
+
+- Restore the complete standard Apache License 2.0 text.
+- Document the project's maintainer-directed use of OpenAI Codex.
+
 ## 1.0.0
 
 - Control and poll individual mPower relays over SSH.

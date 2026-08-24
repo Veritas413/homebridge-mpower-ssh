@@ -2,6 +2,8 @@
 
 A Homebridge dynamic-platform plugin for controlling and monitoring legacy Ubiquiti mFi mPower smart power strips directly over SSH, without an mFi Controller.
 
+This project was primarily coded with [OpenAI Codex](https://developers.openai.com/codex/), with its direction, testing, and releases overseen by the project maintainer.
+
 ## Features
 
 - Per-relay on/off control and state polling
@@ -120,6 +122,8 @@ MPOWER_PASSWORD=your_password npm run probe -- --host 192.168.1.50 --username ad
 Run `npm run probe -- --help` for private-key and other options. Never include probe credentials or output containing sensitive information in a public issue.
 
 ## Development
+
+Most of the implementation and documentation in this repository were produced through maintainer-directed development with Codex. Contributions are still reviewed, tested, and accepted through the same process regardless of whether they are written by a person or with AI assistance.
 
 ```bash
 npm ci
