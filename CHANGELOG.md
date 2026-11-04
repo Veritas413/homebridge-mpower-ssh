@@ -2,6 +2,14 @@
 
 All notable changes to this project are documented here.
 
+## 1.0.1 - 2026-11-04
+
+- Add Node.js 26 LTS support and CI coverage.
+- Refresh development dependencies to remove all critical and high-severity audit findings.
+- Update GitHub Actions checkout and Node setup actions to v7.
+- Add an npm trusted-publishing release workflow and maintainer release documentation.
+- Support Homebridge 2.4 or newer on Node.js 22, 24, or 26.
+
 ## 1.0.0
 
 - Control and poll individual mPower relays over SSH.
